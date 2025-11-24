@@ -11,36 +11,43 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 #[AsCommand(
     name: 'bootstrap:compile',
-    description: 'Compile SCSS to CSS (default: app/assets/scss -> app/assets/css, imports Bootstrap from vendor)'
+    description: 'Compile SCSS to CSS (default: assets/scss -> assets/css, imports Bootstrap from vendor)'
 )]
 class CompileCommand extends Command
 {
+    private string $projectDir;
+
+    public function __construct(KernelInterface $kernel)
+    {
+        parent::__construct();
+        $this->projectDir = $kernel->getProjectDir();
+    }
     protected function configure(): void
     {
         $this
-            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file (relative to project root)', 'app/assets/scss/bootstrap5-custom.scss')
-            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file (relative to project root)', 'app/assets/css/bootstrap.min.css')
+            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file (relative to project root)', 'assets/scss/bootstrap5-custom.scss')
+            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file (relative to project root)', 'assets/css/bootstrap.min.css')
             ->addOption('source-map', null, InputOption::VALUE_NONE, 'Generate source map alongside the CSS');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $projectDir = dirname(__DIR__, 2);
         $inRel = (string) $input->getArgument('input');
         $outRel = (string) $input->getArgument('output');
-        $in = $projectDir . DIRECTORY_SEPARATOR . $inRel;
-        $out = $projectDir . DIRECTORY_SEPARATOR . $outRel;
+        $in = $this->projectDir . DIRECTORY_SEPARATOR . $inRel;
+        $out = $this->projectDir . DIRECTORY_SEPARATOR . $outRel;
 
         if (!file_exists($in)) {
             $output->writeln("<error>Input file not found: {$inRel}</error>");
             if ($inRel === 'vendor/twbs/bootstrap/scss/bootstrap.scss') {
                 $output->writeln('<comment>Hint: Make sure the package "twbs/bootstrap" is installed (composer require twbs/bootstrap) and the path is correct.</comment>');
             }
-            if ($inRel === 'app/assets/scss/bootstrap5-custom.scss') {
-                $output->writeln('<comment>Hint: Create the file app/assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
+            if ($inRel === 'assets/scss/bootstrap5-custom.scss') {
+                $output->writeln('<comment>Hint: Create the file assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
             }
             return Command::FAILURE;
         }
@@ -55,10 +62,10 @@ class CompileCommand extends Command
 
         $compiler = new Compiler();
         $compiler->setImportPaths([
-            $projectDir . '/vendor/twbs/bootstrap/scss',
-            $projectDir . '/vendor',
-            $projectDir . '/app/assets/scss',
-            $projectDir . '/app/assets',
+            $this->projectDir . '/vendor/twbs/bootstrap/scss',
+            $this->projectDir . '/vendor',
+            $this->projectDir . '/assets/scss',
+            $this->projectDir . '/assets',
         ]);
 
         $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::COMPRESSED);
@@ -70,7 +77,7 @@ class CompileCommand extends Command
                 'sourceMapWriteTo' => $out . '.map',
                 'sourceMapURL' => basename($out) . '.map',
                 'sourceMapFilename' => basename($out),
-                'sourceMapBasepath' => $projectDir,
+                'sourceMapBasepath' => $this->projectDir,
                 'sourceRoot' => '/',
             ]);
         }

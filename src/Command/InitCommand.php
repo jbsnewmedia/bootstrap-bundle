@@ -9,13 +9,21 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 #[AsCommand(
     name: 'bootstrap:init',
-    description: 'Scaffold Bootstrap SCSS entry files in app/assets/scss (creates bootstrap5-custom.scss and bootstrap5-custom-dark.scss)'
+    description: 'Scaffold Bootstrap SCSS entry files in assets/scss (creates bootstrap5-custom.scss and bootstrap5-custom-dark.scss)'
 )]
 class InitCommand extends Command
 {
+    private string $projectDir;
+
+    public function __construct(KernelInterface $kernel)
+    {
+        parent::__construct();
+        $this->projectDir = $kernel->getProjectDir();
+    }
     protected function configure(): void
     {
         $this
@@ -29,8 +37,7 @@ class InitCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $projectDir = \dirname(__DIR__, 2);
-        $scssDir = $projectDir . '/app/assets/scss';
+        $scssDir = $this->projectDir . '/assets/scss';
         $files = [
             $scssDir . '/bootstrap5-custom.scss' => self::getLightContent(),
             $scssDir . '/bootstrap5-custom-dark.scss' => self::getDarkContent(),
@@ -42,13 +49,13 @@ class InitCommand extends Command
         // Ensure target directory exists
         if (!is_dir($scssDir)) {
             if ($dryRun) {
-                $output->writeln("[dry-run] Would create directory: app/assets/scss");
+                $output->writeln("[dry-run] Would create directory: assets/scss");
             } else {
                 if (!mkdir($scssDir, 0777, true) && !is_dir($scssDir)) {
-                    $output->writeln('<error>Failed to create directory: app/assets/scss</error>');
+                    $output->writeln('<error>Failed to create directory: assets/scss</error>');
                     return Command::FAILURE;
                 }
-                $output->writeln('<info>Created directory:</info> app/assets/scss');
+                $output->writeln('<info>Created directory:</info> assets/scss');
             }
         }
 
@@ -57,7 +64,7 @@ class InitCommand extends Command
         $overwritten = 0;
 
         foreach ($files as $path => $content) {
-            $rel = 'app/assets/scss/' . basename($path);
+            $rel = 'assets/scss/' . basename($path);
             if (file_exists($path) && !$force) {
                 $output->writeln("<comment>Skip existing:</comment> {$rel} (use --force to overwrite)");
                 $skipped++;
