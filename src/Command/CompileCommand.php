@@ -72,7 +72,7 @@ class CompileCommand extends Command
 
         $sourceMap = (bool) $input->getOption('source-map');
         if ($sourceMap) {
-            $compiler->setSourceMap(\ScssPhp\ScssPhp\SourceMap\SourceMapGenerator::SOURCE_MAP_FILE);
+            $compiler->setSourceMap(Compiler::SOURCE_MAP_FILE);
             $compiler->setSourceMapOptions([
                 'sourceMapWriteTo' => $out . '.map',
                 'sourceMapURL' => basename($out) . '.map',
