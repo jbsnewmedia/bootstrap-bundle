@@ -14,15 +14,15 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'bootstrap:compile',
-    description: 'Compile SCSS to CSS (default: assets/scss -> assets/css, imports Bootstrap from vendor)'
+    description: 'Compile SCSS to CSS (default: app/assets/scss -> app/assets/css, imports Bootstrap from vendor)'
 )]
 class CompileCommand extends Command
 {
     protected function configure(): void
     {
         $this
-            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file (relative to project root)', 'assets/scss/bootstrap5-custom.scss')
-            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file (relative to project root)', 'assets/css/bootstrap.min.css')
+            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file (relative to project root)', 'app/assets/scss/bootstrap5-custom.scss')
+            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file (relative to project root)', 'app/assets/css/bootstrap.min.css')
             ->addOption('source-map', null, InputOption::VALUE_NONE, 'Generate source map alongside the CSS');
     }
 
@@ -39,8 +39,8 @@ class CompileCommand extends Command
             if ($inRel === 'vendor/twbs/bootstrap/scss/bootstrap.scss') {
                 $output->writeln('<comment>Hint: Make sure the package "twbs/bootstrap" is installed (composer require twbs/bootstrap) and the path is correct.</comment>');
             }
-            if ($inRel === 'assets/scss/bootstrap5-custom.scss') {
-                $output->writeln('<comment>Hint: Create the file assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
+            if ($inRel === 'app/assets/scss/bootstrap5-custom.scss') {
+                $output->writeln('<comment>Hint: Create the file app/assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
             }
             return Command::FAILURE;
         }
@@ -57,8 +57,8 @@ class CompileCommand extends Command
         $compiler->setImportPaths([
             $projectDir . '/vendor/twbs/bootstrap/scss',
             $projectDir . '/vendor',
-            $projectDir . '/assets/scss',
-            $projectDir . '/assets',
+            $projectDir . '/app/assets/scss',
+            $projectDir . '/app/assets',
         ]);
 
         $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::COMPRESSED);
