@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Command;
+namespace JBSNewMedia\BootstrapBundle\Command;
 
 use ScssPhp\ScssPhp\Compiler;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -13,18 +13,16 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
-    name: 'boostrap:compile',
-    description: 'SCSS kompilieen (Standard: assets/scss -> assets/css, importiert Bootstrap aus vendor)',
+    name: 'bootstrap:compile',
+    description: 'Compile SCSS to CSS (default: assets/scss -> assets/css, imports Bootstrap from vendor)'
 )]
 class CompileCommand extends Command
 {
     protected function configure(): void
     {
         $this
-            // Default: nutze projektspezifische SCSS-Datei, die Bootstrap konfiguriert
-            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file relative to project root', 'assets/scss/bootstrap5-custom.scss')
-            // Standard-Ausgabe: in assets/css kompilieren
-            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file relative to project root', 'assets/css/bootstrap.min.css')
+            ->addArgument('input', InputArgument::OPTIONAL, 'Input SCSS entry file (relative to project root)', 'assets/scss/bootstrap5-custom.scss')
+            ->addArgument('output', InputArgument::OPTIONAL, 'Output CSS file (relative to project root)', 'assets/css/bootstrap.min.css')
             ->addOption('source-map', null, InputOption::VALUE_NONE, 'Generate source map alongside the CSS');
     }
 
@@ -39,15 +37,14 @@ class CompileCommand extends Command
         if (!file_exists($in)) {
             $output->writeln("<error>Input file not found: {$inRel}</error>");
             if ($inRel === 'vendor/twbs/bootstrap/scss/bootstrap.scss') {
-                $output->writeln('<comment>Hinweis: Stelle sicher, dass das Paket "twbs/bootstrap" installiert ist (composer require twbs/bootstrap) und der Pfad korrekt ist.</comment>');
+                $output->writeln('<comment>Hint: Make sure the package "twbs/bootstrap" is installed (composer require twbs/bootstrap) and the path is correct.</comment>');
             }
             if ($inRel === 'assets/scss/bootstrap5-custom.scss') {
-                $output->writeln('<comment>Hinweis: Lege die Datei assets/scss/bootstrap5-custom.scss an (Variablen überschreiben und anschließend "@import \"bootstrap\";") oder nutze explizit den Vendor-Einstieg: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
+                $output->writeln('<comment>Hint: Create the file assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
             }
             return Command::FAILURE;
         }
 
-        // Ensure output dir exists
         $outDir = dirname($out);
         if (!is_dir($outDir)) {
             if (!mkdir($outDir, 0777, true) && !is_dir($outDir)) {
@@ -57,19 +54,14 @@ class CompileCommand extends Command
         }
 
         $compiler = new Compiler();
-        // Include paths to resolve imports
         $compiler->setImportPaths([
-            // Priorisiere Vendor-Bootstrap-SCSS
             $projectDir . '/vendor/twbs/bootstrap/scss',
             $projectDir . '/vendor',
-            // Projektpfade (falls eigene Overrides vorhanden sind)
             $projectDir . '/assets/scss',
             $projectDir . '/assets',
-            // Optional: Falls Bootstrap via npm/yarn vorhanden ist
             $projectDir . '/node_modules',
         ]);
 
-        // Optional: output style compressed in prod
         $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::COMPRESSED);
 
         $sourceMap = (bool) $input->getOption('source-map');
