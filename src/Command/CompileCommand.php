@@ -106,7 +106,7 @@ class CompileCommand extends Command
                 file_put_contents($mapPath, $mapContent);
                 $output->writeln('<info>Source map written: ' . $this->makePathRelative($mapPath) . '</info>');
             } else {
-                $output->writeln('<comment>Hinweis: Der Compiler lieferte keinen Source-Map-Inhalt zurück. Prüfen Sie Ihre SCSS-Quelldateien und Optionen.</comment>');
+                $output->writeln('<comment>Note: The compiler did not return any source map content. Please check your SCSS source files and options.</comment>');
             }
         }
 

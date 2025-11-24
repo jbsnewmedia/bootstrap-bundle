@@ -1,30 +1,31 @@
 # JBSNewMedia Bootstrap Bundle
 
-JBSNewMedia Bootstrap Bundle is a lightweight Composer package that helps you scaffold and compile Bootstrap SCSS within your PHP/Symfony projects. It ships two console commands:
+A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships two console commands:
 
-- `bootstrap:init` — scaffolds Bootstrap SCSS entry files in `assets/scss/`.
-- `bootstrap:compile` — compiles SCSS to CSS using scssphp, with sensible defaults and Bootstrap include paths.
-
-This package is framework‑light: it does not require a full Symfony kernel to run the commands. A simple `bin/console` that registers the commands is enough.
+- `bootstrap:init` — scaffolds SCSS entry files under `assets/scss/`.
+- `bootstrap:compile` — compiles SCSS to CSS (with sensible defaults and vendor‑aware import paths).
 
 ---
 
 ## 🚀 Features
 
-- Scaffold ready‑to‑use SCSS entries for Bootstrap (light and dark variants)
-- Compile SCSS → CSS using [scssphp](https://github.com/scssphp/scssphp)
-- Includes import paths for `vendor/twbs/bootstrap/scss` out of the box
-- Optional source maps
-- Works in any Composer project; Symfony optional
-- Typo‑tolerant command aliases (`boostrap:*`)
+- Ready‑to‑use SCSS entries (light and dark)
+- SCSS → CSS via scssphp (pure PHP, no Node required)
+- Include paths for `vendor/twbs/bootstrap/scss` out of the box
+- Optional source maps (`--source-map`)
+- Clean defaults: compressed output, standard paths
+- Typo alias for `bootstrap:init` (`boostrap:init`)
 
 ---
 
 ## ⚙️ Requirements
 
 - PHP 8.2 or higher
+- Symfony 6.4 or 7.x (framework‑bundle, console)
 - Composer
-- Bootstrap 5 via Composer (`twbs/bootstrap`)
+- Dependencies: `twbs/bootstrap` (>= 5.3), `scssphp/scssphp` (tested with >= 1.12)
+
+Note: This is a regular Symfony bundle and expects a Symfony kernel (it is auto‑registered).
 
 ---
 
@@ -36,21 +37,21 @@ Install via Composer:
 composer require jbsnewmedia/bootstrap-bundle
 ```
 
-This package requires `twbs/bootstrap` and `scssphp/scssphp`. If not already present, Composer will install them.
+If not already present, Composer will install the required packages (`twbs/bootstrap`, `scssphp/scssphp`).
 
 ---
 
 ## 📋 Usage
 
-### 1) Initialize SCSS entries
+### 1) Scaffold SCSS entries
 
-Scaffold the default SCSS entry files under `assets/scss/`:
+Create the default SCSS entry files under `assets/scss/`:
 
 ```bash
 php bin/console bootstrap:init
-# or preview without writing files
+# preview without writing files
 php bin/console bootstrap:init --dry-run
-# overwrite if they already exist
+# overwrite existing files
 php bin/console bootstrap:init --force
 ```
 
@@ -59,7 +60,7 @@ Files created:
 - `assets/scss/bootstrap5-custom.scss`
 - `assets/scss/bootstrap5-custom-dark.scss`
 
-Both entries import Bootstrap after your variable overrides.
+Both entries import Bootstrap after your variable overrides in the correct order.
 
 ### 2) Compile SCSS → CSS
 
@@ -75,27 +76,21 @@ Defaults:
 - Output: `assets/css/bootstrap.min.css`
 - Output style: compressed
 
-Generate source maps:
+Generate a source map:
 
 ```bash
 php bin/console bootstrap:compile --source-map
 ```
 
-Custom input/output:
+Custom input/output paths:
 
 ```bash
 php bin/console bootstrap:compile path/to/entry.scss public/css/app.css
 ```
 
-Convenience: calling without a command runs the compiler with defaults
-
-```bash
-php bin/console
-```
-
 ---
 
-## 🧩 Commands reference
+## 🧩 Command reference
 
 ### bootstrap:init
 
@@ -104,13 +99,14 @@ Scaffolds Bootstrap SCSS entry files.
 - Options:
   - `--dry-run` — show what would be written without creating files
   - `-f, --force` — overwrite existing files
+- Alias: `boostrap:init` (common typo)
 
 Creates the following files in `assets/scss/`:
 
 - `bootstrap5-custom.scss` (light)
 - `bootstrap5-custom-dark.scss` (dark)
 
-Both files follow the recommended order: functions → your variable overrides → Bootstrap import.
+Recommended order inside the files: functions → your variable overrides → Bootstrap import.
 
 ### bootstrap:compile
 
@@ -120,17 +116,16 @@ Compiles SCSS to CSS using scssphp.
   - `input` (optional) — SCSS entry file; default `assets/scss/bootstrap5-custom.scss`
   - `output` (optional) — CSS output file; default `assets/css/bootstrap.min.css`
 - Options:
-  - `--source-map` — generate a `.map` file alongside the CSS
+  - `--source-map` — write a `.map` file next to the CSS output
 
-Import paths are preconfigured to resolve common Bootstrap imports:
+Preconfigured include paths (in this order):
 
 1. `vendor/twbs/bootstrap/scss`
 2. `vendor`
 3. `assets/scss`
 4. `assets`
-5. `node_modules`
 
-This lets you use imports like:
+This allows imports like:
 
 ```scss
 @import "functions";
@@ -138,21 +133,41 @@ This lets you use imports like:
 @import "bootstrap";
 ```
 
+### Source map behavior
+
+When using `--source-map`, the generated map is saved after compilation:
+
+- CSS: `assets/css/bootstrap.min.css`
+- Map: `assets/css/bootstrap.min.css.map`
+
+Example console output:
+
+```text
+Compiled assets/scss/bootstrap5-custom.scss -> assets/css/bootstrap.min.css
+Source map written: assets/css/bootstrap.min.css.map
+```
+
+If no map is written even though `--source-map` is set, please check that your SCSS source actually produces output and that the defaults were not overridden.
+
 ---
 
-## ✍️ Example SCSS entries
+## ✍️ Example SCSS
 
 Light (created by `bootstrap:init`):
 
 ```scss
 // Project-wide Bootstrap configuration
-// 1) Bootstrap functions
+// -------------------------------------------------
+// Order matters: load functions first, then override variables,
+// then import Bootstrap.
+
+// 1) Bootstrap functions (used in variable calculations)
 @import "functions";
 
-// 2) Your variable overrides
+// 2) Your variable overrides (omit !default so they actually apply)
 $primary: #ff0000;
 
-// 3) Optionally load Bootstrap variables
+// 3) Optional: load Bootstrap base variables
 @import "variables";
 
 // 4) Import full Bootstrap
@@ -163,11 +178,19 @@ Dark (created by `bootstrap:init`):
 
 ```scss
 // Dark mode build for Bootstrap
+// -------------------------------------------------
+// 1) Load Bootstrap functions
 @import "functions";
+
+// 2) Set dark-specific variables (adjust examples as needed)
 $body-bg: #121212;
 $body-color: #e6e6e6;
 $primary: #0d6efd;
+
+// Optional: load additional maps/variables from Bootstrap
 @import "variables";
+
+// 3) Import full Bootstrap
 @import "bootstrap";
 ```
 
@@ -179,14 +202,10 @@ $primary: #0d6efd;
   - Run `php bin/console bootstrap:init` to create default entries, or pass your own path to `bootstrap:compile`.
 - Bootstrap imports not resolved
   - Ensure `twbs/bootstrap` is installed: `composer require twbs/bootstrap`.
-- Typos in command names
-  - Common typo aliases are supported: `boostrap:init`, `boostrap:compile`.
-
----
-
-## 🧪 Development & QA
-
-This package aims to be minimal and dependency‑light. Use any standard PHP QA tools you prefer (PHP-CS-Fixer, PHPStan, Rector). Example custom Composer binaries setup is outside the scope of this README.
+- Source map comment is present, but no file is written
+  - With the current implementation the map is written after compilation. Check that `--source-map` is set and your SCSS produces content.
+- scssphp versions
+  - Since scssphp ≥ 1.12, source map constants live on `Compiler`. This bundle is aligned with that change.
 
 ---
 
@@ -198,7 +217,7 @@ Developed by Juergen Schwind and contributors.
 
 ---
 
-## 🤝 Contributing
+## 🤝 Contribution
 
 Contributions are welcome! Please fork the repository and open a pull request. For larger changes, consider opening an issue first to discuss your idea.
 
