@@ -14,7 +14,6 @@ A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS 
 - Include paths for `vendor/twbs/bootstrap/scss` out of the box
 - Optional source maps (`--source-map`)
 - Clean defaults: compressed output, standard paths
-- Typo alias for `bootstrap:init` (`boostrap:init`)
 
 ---
 
