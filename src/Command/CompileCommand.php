@@ -59,7 +59,6 @@ class CompileCommand extends Command
             $projectDir . '/vendor',
             $projectDir . '/assets/scss',
             $projectDir . '/assets',
-            $projectDir . '/node_modules',
         ]);
 
         $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::COMPRESSED);

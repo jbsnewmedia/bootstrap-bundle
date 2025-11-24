@@ -4,7 +4,7 @@
     "license": "MIT",
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "description": "",
+    "description": "Lightweight tools to scaffold and compile Bootstrap SCSS using scssphp. Provides console commands (bootstrap:init, bootstrap:compile) with sensible defaults and vendor-aware import paths.",
     "authors": [
         {
             "name": "Juergen Schwind",
@@ -16,7 +16,6 @@
         "ext-ctype": "*",
         "ext-iconv": "*",
         "scssphp/scssphp": "*",
-        "symfony/console": "^6.4|^7.0",
         "twbs/bootstrap": "^5.3"
     },
     "config": {
