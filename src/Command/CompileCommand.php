@@ -89,7 +89,8 @@ class CompileCommand extends Command
         }
 
         try {
-            $css = $compiler->compileString($scss, $in)->getCss();
+            $result = $compiler->compileString($scss, $in);
+            $css = $result->getCss();
         } catch (\Throwable $e) {
             $output->writeln('<error>SCSS compilation failed: ' . $e->getMessage() . '</error>');
             return Command::FAILURE;
@@ -98,6 +99,26 @@ class CompileCommand extends Command
         file_put_contents($out, $css);
         $output->writeln('<info>Compiled ' . $inRel . ' -> ' . $outRel . '</info>');
 
+        if ($sourceMap ?? false) {
+            $mapContent = $result->getSourceMap();
+            if (is_string($mapContent) && $mapContent !== '') {
+                $mapPath = $out . '.map';
+                file_put_contents($mapPath, $mapContent);
+                $output->writeln('<info>Source map written: ' . $this->makePathRelative($mapPath) . '</info>');
+            } else {
+                $output->writeln('<comment>Hinweis: Der Compiler lieferte keinen Source-Map-Inhalt zurück. Prüfen Sie Ihre SCSS-Quelldateien und Optionen.</comment>');
+            }
+        }
+
         return Command::SUCCESS;
+    }
+
+    private function makePathRelative(string $absPath): string
+    {
+        $prefix = rtrim($this->projectDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        if (str_starts_with($absPath, $prefix)) {
+            return substr($absPath, strlen($prefix));
+        }
+        return $absPath;
     }
 }
