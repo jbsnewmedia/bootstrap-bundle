@@ -1,0 +1,79 @@
+{% extends 'base.html.twig' %}
+
+{#
+  Demo: Bootstrap via Asset Composer
+  - Registriert die kompilierten Bootstrap-CSS (assets/css/bootstrap.min.css) für <head>
+  - Registriert das Bootstrap JS Bundle (vendor/twbs/bootstrap/dist/js/bootstrap.bundle.min.js) für das Ende des <body>
+  - Die tatsächliche Ausgabe der <link> / <script>-Tags passiert in base.html.twig über
+    {{ renderAssetComposerStylesheets('head') }} und {{ renderAssetComposerJavascripts('body') }}
+#}
+
+{% block title %}Bootstrap Demo{% endblock %}
+
+{% block stylesheets %}
+    {# Bootstrap CSS registrieren (Position: head) #}
+    {{ addAssetComposer('app/assets/css/bootstrap.min.css', 'head') }}
+{% endblock %}
+
+{% block body %}
+    <nav class="navbar navbar-expand-lg bg-body-tertiary bg-light border-bottom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Asset Composer Demo</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="#">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://getbootstrap.com" target="_blank" rel="noopener">Bootstrap</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container py-4">
+        <h1 class="mb-3">Bootstrap via Asset Composer</h1>
+
+        <div class="alert alert-primary" role="alert">
+            Wenn du diesen Hinweis stilvoll siehst, wurde das CSS erfolgreich geladen.
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Buttons</h5>
+                        <button type="button" class="btn btn-primary">Primary</button>
+                        <button type="button" class="btn btn-outline-secondary">Outline</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Collapse (JS)</h5>
+                        <p>
+                            <a class="btn btn-secondary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
+                                Toggle content
+                            </a>
+                        </p>
+                        <div class="collapse" id="collapseExample">
+                            <div class="card card-body">
+                                Wenn sich dieser Bereich ein- und ausklappen lässt, ist Bootstrap JS aktiv.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {# Bootstrap JS registrieren (Position: body) #}
+    {{ addAssetComposer('twbs/bootstrap/dist/js/bootstrap.bundle.min.js', 'body') }}
+{% endblock %}

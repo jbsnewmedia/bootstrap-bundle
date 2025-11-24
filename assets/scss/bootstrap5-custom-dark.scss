@@ -1,0 +1,15 @@
+// Dark Mode Build für Bootstrap
+// -------------------------------------------------
+// 1) Bootstrap-Funktionen laden
+@import "functions";
+
+// 2) Dark-spezifische Variablen setzen (Beispiele anpassen)
+$body-bg: #121212;
+$body-color: #e6e6e6;
+$primary: #0d6efd; // kannst du anpassen
+
+// Optional: weitere Maps/Variablen aus Bootstrap laden
+@import "variables";
+
+// 3) Komplettes Bootstrap importieren
+@import "bootstrap";
