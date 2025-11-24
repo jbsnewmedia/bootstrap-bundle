@@ -2,7 +2,7 @@
     "name": "jbsnewmedia/bootstrap-bundle",
     "type": "symfony-bundle",
     "license": "MIT",
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true,
     "description": "Lightweight tools to scaffold and compile Bootstrap SCSS using scssphp. Provides console commands (bootstrap:init, bootstrap:compile) with sensible defaults and vendor-aware import paths.",
     "authors": [
