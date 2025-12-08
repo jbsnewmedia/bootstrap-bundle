@@ -35,7 +35,7 @@
     "extra": {
         "symfony": {
             "bundle": {
-                "JBSNewMedia\\\\BootstrapBundle\\\\JBSNewMediaBootstrapBundle": ["all"]
+                "JBSNewMedia\\\\BootstrapBundle\\\\BootstrapBundle": ["all"]
             }
         }
     }

@@ -6,6 +6,6 @@ namespace JBSNewMedia\BootstrapBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class JBSNewMediaBootstrapBundle extends Bundle
+class BootstrapBundle extends Bundle
 {
 }
