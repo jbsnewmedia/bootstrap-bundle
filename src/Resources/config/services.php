@@ -12,4 +12,7 @@ return static function (ContainerConfigurator $config): void {
 
     $services->load('JBSNewMedia\\BootstrapBundle\\Command\\', __DIR__ . '/../../Command')
         ->private();
+
+    $services->load('JBSNewMedia\\BootstrapBundle\\Service\\', __DIR__ . '/../../Service')
+        ->private();
 };

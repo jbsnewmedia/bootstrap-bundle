@@ -13,10 +13,11 @@
     ],
     "require": {
         "php": ">=8.2",
-        "scssphp/scssphp": "*",
-        "twbs/bootstrap": "^5.3",
+        "jbsnewmedia/css-purger": "^1.0",
+        "scssphp/scssphp": "^2.0",
+        "symfony/console": "^6.4 || ^7.0",
         "symfony/framework-bundle": "^6.4 || ^7.0",
-        "symfony/console": "^6.4 || ^7.0"
+        "twbs/bootstrap": "^5.3"
     },
     "config": {
         "bump-after-update": true,
