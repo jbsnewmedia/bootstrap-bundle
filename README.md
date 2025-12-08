@@ -1,5 +1,7 @@
 # JBSNewMedia Bootstrap Bundle
 
+Version: 1.0.2 (commit b66d748) — 2025-12-08
+
 A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships two console commands:
 
 - `bootstrap:init` — scaffolds SCSS entry files under `assets/scss/`.
@@ -11,9 +13,11 @@ A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS 
 
 - Ready‑to‑use SCSS entries (light and dark)
 - SCSS → CSS via scssphp (pure PHP, no Node required)
+- Writes readable and minified CSS in one run
+- Optional source maps for each output (`--source-map`)
 - Include paths for `vendor/twbs/bootstrap/scss` out of the box
-- Optional source maps (`--source-map`)
-- Clean defaults: compressed output, standard paths
+- Purge Bootstrap CSS based on your templates (`bootstrap:purge`)
+- Clean defaults and sensible paths
 
 ---
 
@@ -22,7 +26,10 @@ A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS 
 - PHP 8.2 or higher
 - Symfony 6.4 or 7.x (framework‑bundle, console)
 - Composer
-- Dependencies: `twbs/bootstrap` (>= 5.3), `scssphp/scssphp` (tested with >= 1.12)
+- Dependencies:
+  - `twbs/bootstrap` (>= 5.3)
+  - `scssphp/scssphp` (^2.0)
+  - `jbsnewmedia/css-purger` (^1.0) — for the purge command
 
 Note: This is a regular Symfony bundle and expects a Symfony kernel (it is auto‑registered).
 
@@ -72,8 +79,11 @@ php bin/console bootstrap:compile
 Defaults:
 
 - Input: `assets/scss/bootstrap5-custom.scss`
-- Output: `assets/css/bootstrap.min.css`
-- Output style: compressed
+- Outputs:
+  - readable CSS → `assets/css/bootstrap.css`
+  - minified CSS → `assets/css/bootstrap.min.css`
+
+Readable output path can be adjusted via `--output-normal`.
 
 Generate a source map:
 
@@ -85,6 +95,20 @@ Custom input/output paths:
 
 ```bash
 php bin/console bootstrap:compile path/to/entry.scss public/css/app.css
+```
+
+### 3) Purge unused Bootstrap CSS (optional)
+
+After compiling, you can purge unused selectors by scanning your templates:
+
+```bash
+php bin/console bootstrap:purge \
+  --input=assets/css/bootstrap.css \
+  --output=assets/css/bootstrap-purged.css \
+  --templates-dir=templates \
+  --include-dir=src \
+  --include-file=assets/app.js \
+  --selector=collapse --selector=show
 ```
 
 ---
@@ -113,9 +137,10 @@ Compiles SCSS to CSS using scssphp.
 
 - Arguments:
   - `input` (optional) — SCSS entry file; default `assets/scss/bootstrap5-custom.scss`
-  - `output` (optional) — CSS output file; default `assets/css/bootstrap.min.css`
+  - `output` (optional) — minified CSS output file; default `assets/css/bootstrap.min.css`
 - Options:
-  - `--source-map` — write a `.map` file next to the CSS output
+  - `--output-normal`, `-O` — readable (non‑minified) CSS output path; default `assets/css/bootstrap.css`
+  - `--source-map` — write a `.map` file next to each CSS output (readable and minified)
 
 Preconfigured include paths (in this order):
 
@@ -132,17 +157,33 @@ This allows imports like:
 @import "bootstrap";
 ```
 
+### bootstrap:purge
+
+Purges Bootstrap CSS by scanning your templates and keeping only the selectors that are found.
+
+- Options:
+  - `--input`, `-i` — path to input CSS file; default `assets/css/bootstrap.css`
+  - `--output`, `-o` — path to write the purged CSS; default `assets/css/bootstrap-purged.css`
+  - `--templates-dir` — template directories to scan (multiple allowed)
+  - `--include-dir`, `-D` — additional directories to scan (multiple allowed)
+  - `--include-file`, `-F` — additional files to scan (multiple allowed)
+  - `--selector`, `-S` — selectors to always keep (multiple allowed)
+  - `--readable`, `-r` — generate human‑readable (pretty) CSS output
+  - `--dry-run` — show stats without writing the output file
+
 ### Source map behavior
 
-When using `--source-map`, the generated map is saved after compilation:
+When using `--source-map`, a map is written for each output:
 
-- CSS: `assets/css/bootstrap.min.css`
-- Map: `assets/css/bootstrap.min.css.map`
+- Readable CSS: `assets/css/bootstrap.css` + map `assets/css/bootstrap.css.map`
+- Minified CSS: `assets/css/bootstrap.min.css` + map `assets/css/bootstrap.min.css.map`
 
 Example console output:
 
 ```text
-Compiled assets/scss/bootstrap5-custom.scss -> assets/css/bootstrap.min.css
+Compiled (readable) assets/scss/bootstrap5-custom.scss -> assets/css/bootstrap.css
+Source map written: assets/css/bootstrap.css.map
+Compiled (minified) assets/scss/bootstrap5-custom.scss -> assets/css/bootstrap.min.css
 Source map written: assets/css/bootstrap.min.css.map
 ```
 
@@ -204,7 +245,14 @@ $primary: #0d6efd;
 - Source map comment is present, but no file is written
   - With the current implementation the map is written after compilation. Check that `--source-map` is set and your SCSS produces content.
 - scssphp versions
-  - Since scssphp ≥ 1.12, source map constants live on `Compiler`. This bundle is aligned with that change.
+  - This bundle targets `scssphp/scssphp` ^2.0. If you use another major version, adjust accordingly.
+
+---
+
+## ℹ️ Git information
+
+- Latest tag: `1.0.2`
+- Last commit: `b66d748` — 2025-12-08
 
 ---
 
