@@ -1,11 +1,10 @@
 # JBSNewMedia Bootstrap Bundle
 
-Version: 1.0.2 (commit b66d748) — 2025-12-08
-
-A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships two console commands:
+A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships three console commands:
 
 - `bootstrap:init` — scaffolds SCSS entry files under `assets/scss/`.
 - `bootstrap:compile` — compiles SCSS to CSS (with sensible defaults and vendor‑aware import paths).
+- `bootstrap:purge` — purges compiled Bootstrap CSS by scanning your templates.
 
 ---
 
@@ -29,7 +28,7 @@ A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS 
 - Dependencies:
   - `twbs/bootstrap` (>= 5.3)
   - `scssphp/scssphp` (^2.0)
-  - `jbsnewmedia/css-purger` (^1.0) — for the purge command
+  - `jbsnewmedia/css-purger` (^1.0)
 
 Note: This is a regular Symfony bundle and expects a Symfony kernel (it is auto‑registered).
 
