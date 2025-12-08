@@ -31,7 +31,6 @@ class InitCommand extends Command
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Show what would be done without writing files')
         ;
 
-        // Add a common typo alias so `bin/console boostrap:init` also works
         $this->setAliases(['boostrap:init']);
     }
 
@@ -46,7 +45,6 @@ class InitCommand extends Command
         $force = (bool) $input->getOption('force');
         $dryRun = (bool) $input->getOption('dry-run');
 
-        // Ensure target directory exists
         if (!is_dir($scssDir)) {
             if ($dryRun) {
                 $output->writeln("[dry-run] Would create directory: assets/scss");
@@ -107,7 +105,6 @@ class InitCommand extends Command
 
     private static function getLightContent(): string
     {
-        // Content taken from attached file bootstrap5-custom.scss
         return <<<'SCSS'
 // Project-wide Bootstrap configuration
 // -------------------------------------------------
@@ -133,7 +130,6 @@ SCSS;
 
     private static function getDarkContent(): string
     {
-        // Content taken from attached file bootstrap5-custom-dark.scss
         return <<<'SCSS'
 // Dark mode build for Bootstrap
 // -------------------------------------------------

@@ -23,7 +23,6 @@ class PurgeService
         $content = $this->collectContents($pathsToScan);
         $foundSelectors = $this->extractSelectors($content);
 
-        // Merge extra selectors provided by user
         foreach ($extraSelectors as $sel) {
             $sel = trim((string) $sel);
             if ($sel !== '') {
@@ -31,13 +30,9 @@ class PurgeService
             }
         }
 
-        // Normalize and unique
         $normalized = $this->normalizeSelectors($foundSelectors);
         $normalized = array_values(array_unique($normalized));
 
-        // Ensure the purger class is available. When the bundle is loaded from source via PSR-4
-        // (and not required via Composer), the bundle's own vendor autoloader is not registered
-        // in the host application. Try to load it locally as a fallback.
         if (!class_exists(BootstrapPurger::class)) {
             $bundleVendorAutoload = __DIR__ . '/../../vendor/autoload.php';
             if (is_file($bundleVendorAutoload)) {
@@ -63,7 +58,6 @@ class PurgeService
             $purger->addSelectors($normalized);
         }
         $css = $purger->generateOutput(!$readable); // library expects minify flag; invert readable
-
         return [$normalized, $css, [
             'found' => count($foundSelectors),
             'normalized' => count($normalized),
@@ -111,11 +105,32 @@ class PurgeService
     {
         $selectors = [];
 
+        $clean = (string)$content;
+        $clean = preg_replace('/\{#.*?#\}/s', '', $clean) ?? $clean;
+
+        // Harvest from Twig blocks
+        if (preg_match_all('/(\{\{.*?\}\}|\{%.*?%\})/s', $clean, $twigBlocks)) {
+            foreach ($twigBlocks[0] as $block) {
+                if (preg_match_all('/(["\'])\s*([^"\'\s][^"\']*)\s*\1/s', $block, $strs)) {
+                    foreach ($strs[2] as $literal) {
+                        $literal = trim((string)$literal);
+                        if ($literal !== '' && $this->isValidCssIdent($literal)) {
+                            $selectors[] = '.' . $literal;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Remove all Twig print/control blocks
+        $clean = preg_replace('/\{\{.*?\}\}|\{%.*?%\}/s', '', $clean) ?? $clean;
+
         // class="foo bar" and class='foo bar'
-        if (preg_match_all('/class\s*=\s*(["\'])(.*?)\1/si', $content, $m)) {
+        if (preg_match_all('/class\s*=\s*(["\'])(.*?)\1/si', $clean, $m)) {
             foreach ($m[2] as $classList) {
                 foreach (preg_split('/\s+/', trim((string)$classList)) as $cls) {
-                    if ($cls !== '') {
+                    $cls = trim($cls);
+                    if ($cls !== '' && $this->isValidCssIdent($cls)) {
                         $selectors[] = '.' . $cls;
                     }
                 }
@@ -123,10 +138,11 @@ class PurgeService
         }
 
         // className="foo" (React/JSX)
-        if (preg_match_all('/className\s*=\s*(["\'])(.*?)\1/si', $content, $m2)) {
+        if (preg_match_all('/className\s*=\s*(["\'])(.*?)\1/si', $clean, $m2)) {
             foreach ($m2[2] as $classList) {
                 foreach (preg_split('/\s+/', trim((string)$classList)) as $cls) {
-                    if ($cls !== '') {
+                    $cls = trim($cls);
+                    if ($cls !== '' && $this->isValidCssIdent($cls)) {
                         $selectors[] = '.' . $cls;
                     }
                 }
@@ -134,35 +150,37 @@ class PurgeService
         }
 
         // id="foo" and id='foo'
-        if (preg_match_all('/id\s*=\s*(["\'])(.*?)\1/si', $content, $m3)) {
+        if (preg_match_all('/id\s*=\s*(["\'])(.*?)\1/si', $clean, $m3)) {
             foreach ($m3[2] as $idVal) {
                 $idVal = trim((string)$idVal);
-                if ($idVal !== '') {
+                if ($idVal !== '' && $this->isValidCssIdent($idVal)) {
                     $selectors[] = '#' . $idVal;
                 }
             }
         }
 
         // data-bs-theme=value => attribute selector
-        if (preg_match_all('/data-bs-theme\s*=\s*(["\']?)([a-zA-Z0-9_-]+)\1/si', $content, $m4)) {
+        if (preg_match_all('/data-bs-theme\s*=\s*(["\']?)([a-zA-Z0-9_-]+)\1/si', $clean, $m4)) {
             foreach ($m4[2] as $theme) {
                 $selectors[] = '[data-bs-theme=' . $theme . ']';
             }
         }
 
         // HTML tags used, e.g., <body>, <h1>, <div>
-        if (preg_match_all('/<\s*([a-z][a-z0-9-]*)[^>]*>/i', $content, $m5)) {
+        if (preg_match_all('/<\s*([a-z][a-z0-9-]*)[^>]*>/i', $clean, $m5)) {
             foreach ($m5[1] as $tag) {
                 $selectors[] = strtolower($tag);
             }
         }
 
         // JS: element.classList.add('foo','bar')
-        if (preg_match_all('/classList\.(?:add|toggle)\s*\(([^\)]*)\)/si', $content, $m6)) {
+        if (preg_match_all('/classList\.(?:add|toggle)\s*\(([^\)]*)\)/si', $clean, $m6)) {
             foreach ($m6[1] as $args) {
                 if (preg_match_all('/["\']([a-zA-Z0-9_-]+)["\']/', (string)$args, $mArgs)) {
                     foreach ($mArgs[1] as $cls) {
-                        $selectors[] = '.' . $cls;
+                        if ($this->isValidCssIdent($cls)) {
+                            $selectors[] = '.' . $cls;
+                        }
                     }
                 }
             }
@@ -180,16 +198,39 @@ class PurgeService
             if ($sel === '') {
                 continue;
             }
-            // Ensure proper prefix for plain words
-            if ($sel[0] !== '.' && $sel[0] !== '#' && $sel[0] !== '[' && $sel[0] !== ':' && !preg_match('/^[a-z]/i', $sel)) {
-                // skip weird tokens
+            $type = $sel[0];
+            $valid = false;
+            switch ($type) {
+                case '.':
+                    $valid = (bool)preg_match('/^\.[A-Za-z_][A-Za-z0-9_-]*$/', $sel);
+                    break;
+                case '#':
+                    $valid = (bool)preg_match('/^#[A-Za-z_][A-Za-z0-9_-]*$/', $sel);
+                    break;
+                case '[':
+                    $valid = (bool)preg_match('/^\[[A-Za-z0-9_-]+=[A-Za-z0-9_-]+\]$/', $sel);
+                    break;
+                case ':':
+                    $valid = ($sel === ':root');
+                    break;
+                default:
+                    $valid = (bool)preg_match('/^[a-z][a-z0-9-]*$/', $sel);
+                    break;
+            }
+
+            if (!$valid) {
                 continue;
             }
-            // Sanitize multiple spaces
-            $sel = preg_replace('/\s+/', ' ', $sel);
+
+            $sel = preg_replace('/\s+/', ' ', $sel) ?? $sel;
             $out[] = $sel;
         }
 
         return $out;
+    }
+
+    private function isValidCssIdent(string $token): bool
+    {
+        return (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $token);
     }
 }

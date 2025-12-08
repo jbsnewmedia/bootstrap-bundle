@@ -23,9 +23,6 @@ class PurgeCommand extends Command
         KernelInterface $kernel,
         private readonly PurgeService $purgeService,
     ) {
-        // Initialize projectDir BEFORE calling parent constructor because
-        // Symfony calls configure() from Command::__construct(), and our
-        // configure() relies on $this->projectDir for default option values.
         $this->projectDir = $kernel->getProjectDir();
         parent::__construct();
     }
@@ -33,7 +30,7 @@ class PurgeCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addOption('input', 'i', InputOption::VALUE_REQUIRED, 'Path to input CSS file', $this->projectDir . '/assets/css/bootstrap.min.css')
+            ->addOption('input', 'i', InputOption::VALUE_REQUIRED, 'Path to input CSS file', $this->projectDir . '/assets/css/bootstrap.css')
             ->addOption('output', 'o', InputOption::VALUE_REQUIRED, 'Path to write the purged CSS file', $this->projectDir . '/assets/css/bootstrap-purged.css')
             ->addOption('templates-dir', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Template directories to scan (multiple allowed)', [$this->projectDir . '/templates'])
             ->addOption('include-dir', 'D', InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Additional directories to scan for selectors (multiple allowed)')
@@ -77,11 +74,22 @@ class PurgeCommand extends Command
         $output->writeln(sprintf('Input CSS: %s (%s)', $cssInput, is_file($cssInput) ? (string)filesize($cssInput) . ' bytes' : 'missing'));
         $output->writeln(sprintf('Output CSS: %s%s', $cssOutput, $dryRun ? ' (dry-run, not written)' : ''));
 
-        // Report: show all detected/kept selectors (includes HTML tags, classes, ids, attributes)
         if (!empty($keptSelectors)) {
             $output->writeln('Selectors found (normalized):');
             foreach ($keptSelectors as $sel) {
                 $output->writeln('  - ' . $sel);
+            }
+
+            $tags = array_values(array_unique(array_filter($keptSelectors, static function (string $s): bool {
+                return (bool)preg_match('/^[a-z][a-z0-9-]*$/', $s);
+            })));
+            if (!empty($tags)) {
+                $output->writeln('HTML tags found:');
+                foreach ($tags as $tag) {
+                    $output->writeln('  - ' . $tag);
+                }
+            } else {
+                $output->writeln('HTML tags found: none');
             }
         } else {
             $output->writeln('Selectors found (normalized): none');
