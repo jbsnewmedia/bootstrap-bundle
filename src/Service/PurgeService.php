@@ -16,11 +16,11 @@ class PurgeService
      * @param string[] $extraSelectors Additional selectors to keep
      * @param bool     $readable       If true, output will be formatted (not minified)
      *
-     * @return array{0: array<int,string>, 1: string, 2: array<string,int>} [selectorsKept, cssOutput, stats]
+     * @return array{0: array<int,string>, 1: string, 2: array<string, mixed>} [selectorsKept, cssOutput, stats]
      */
     public function purge(string $cssPath, array $pathsToScan = [], array $extraSelectors = [], bool $readable = false): array
     {
-        $content = $this->collectContents($pathsToScan);
+        [$content, $scannedFiles] = $this->collectContents($pathsToScan);
         $foundSelectors = $this->extractSelectors($content);
 
         foreach ($extraSelectors as $sel) {
@@ -58,16 +58,26 @@ class PurgeService
             $purger->addSelectors($normalized);
         }
         $css = $purger->generateOutput(!$readable); // library expects minify flag; invert readable
+
+        $search = '/* Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
+        $replace = '/* Purged with Bootstrap Bundle (http://jbs-newmedia.de/bootstrap-bundle) - Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
+        $css = str_replace($search, $replace, $css);
+
         return [$normalized, $css, [
             'found' => count($foundSelectors),
             'normalized' => count($normalized),
+            'scanned_files' => $scannedFiles,
         ]];
     }
 
-    /** @param string[] $paths */
-    private function collectContents(array $paths): string
+    /**
+     * @param string[] $paths
+     * @return array{0: string, 1: string[]}
+     */
+    private function collectContents(array $paths): array
     {
         $buffer = '';
+        $scannedFiles = [];
         foreach ($paths as $path) {
             if (!is_string($path) || $path === '') {
                 continue;
@@ -77,15 +87,17 @@ class PurgeService
                 /** @var \SplFileInfo $file */
                 foreach ($it as $file) {
                     if ($this->isScannableFile($file->getPathname())) {
+                        $scannedFiles[] = $file->getPathname();
                         $buffer .= "\n\n/* FILE: {$file->getPathname()} */\n" . @file_get_contents($file->getPathname());
                     }
                 }
             } elseif (is_file($path) && $this->isScannableFile($path)) {
+                $scannedFiles[] = $path;
                 $buffer .= "\n\n/* FILE: {$path} */\n" . @file_get_contents($path);
             }
         }
 
-        return $buffer;
+        return [$buffer, $scannedFiles];
     }
 
     private function isScannableFile(string $path): bool
