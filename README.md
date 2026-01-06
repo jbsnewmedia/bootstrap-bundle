@@ -1,4 +1,4 @@
-# JBSNewMedia Bootstrap Bundle
+# Bootstrap Bundle
 
 A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships three console commands:
 
