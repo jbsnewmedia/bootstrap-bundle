@@ -60,7 +60,7 @@ class PurgeService
         $css = $purger->generateOutput(!$readable); // library expects minify flag; invert readable
 
         $search = '/* Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
-        $replace = '/* Purged with Bootstrap Bundle (http://jbs-newmedia.de/bootstrap-bundle) - Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
+        $replace = '/* Purged with Bootstrap Bundle (https://jbs-newmedia.de/bootstrap-bundle) - Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
         $css = str_replace($search, $replace, $css);
 
         return [$normalized, $css, [
