@@ -25,7 +25,7 @@ class PurgeService
 
         foreach ($extraSelectors as $sel) {
             $sel = trim((string) $sel);
-            if ($sel !== '') {
+            if ('' !== $sel) {
                 $foundSelectors[] = $sel;
             }
         }
@@ -34,20 +34,14 @@ class PurgeService
         $normalized = array_values(array_unique($normalized));
 
         if (!class_exists(BootstrapPurger::class)) {
-            $bundleVendorAutoload = __DIR__ . '/../../vendor/autoload.php';
+            $bundleVendorAutoload = __DIR__.'/../../vendor/autoload.php';
             if (is_file($bundleVendorAutoload)) {
                 /** @noinspection PhpIncludeInspection */
                 @require_once $bundleVendorAutoload;
             }
         }
         if (!class_exists(BootstrapPurger::class)) {
-            throw new \RuntimeException(
-                'Required class JBSNewMedia\\CssPurger\\Vendors\\Bootstrap not found. ' .
-                'Please ensure the package "jbsnewmedia/css-purger" is installed. ' .
-                'If you load the BootstrapBundle from source, either: ' .
-                '1) require jbsnewmedia/css-purger in your application, or ' .
-                '2) run "composer install" inside the bundle so its vendor/autoload.php exists.'
-            );
+            throw new \RuntimeException('Required class JBSNewMedia\\CssPurger\\Vendors\\Bootstrap not found. Please ensure the package "jbsnewmedia/css-purger" is installed. If you load the BootstrapBundle from source, either: 1) require jbsnewmedia/css-purger in your application, or 2) run "composer install" inside the bundle so its vendor/autoload.php exists.');
         }
 
         $purger = new BootstrapPurger($cssPath);
@@ -59,8 +53,8 @@ class PurgeService
         }
         $css = $purger->generateOutput(!$readable); // library expects minify flag; invert readable
 
-        $search = '/* Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
-        $replace = '/* Purged with Bootstrap Bundle (https://jbs-newmedia.de/bootstrap-bundle) - Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */' . "\n";
+        $search = '/* Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */'."\n";
+        $replace = '/* Purged with Bootstrap Bundle (https://jbs-newmedia.de/bootstrap-bundle) - Purged by CssPurger (https://jbs-newmedia.de/css-purger) - MIT License - JBS New Media GmbH, Juergen Schwind */'."\n";
         $css = str_replace($search, $replace, $css);
 
         return [$normalized, $css, [
@@ -72,6 +66,7 @@ class PurgeService
 
     /**
      * @param string[] $paths
+     *
      * @return array{0: string, 1: string[]}
      */
     private function collectContents(array $paths): array
@@ -79,7 +74,7 @@ class PurgeService
         $buffer = '';
         $scannedFiles = [];
         foreach ($paths as $path) {
-            if (!is_string($path) || $path === '') {
+            if (!is_string($path) || '' === $path) {
                 continue;
             }
             if (is_dir($path)) {
@@ -88,12 +83,12 @@ class PurgeService
                 foreach ($it as $file) {
                     if ($this->isScannableFile($file->getPathname())) {
                         $scannedFiles[] = $file->getPathname();
-                        $buffer .= "\n\n/* FILE: {$file->getPathname()} */\n" . @file_get_contents($file->getPathname());
+                        $buffer .= "\n\n/* FILE: {$file->getPathname()} */\n".@file_get_contents($file->getPathname());
                     }
                 }
             } elseif (is_file($path) && $this->isScannableFile($path)) {
                 $scannedFiles[] = $path;
-                $buffer .= "\n\n/* FILE: {$path} */\n" . @file_get_contents($path);
+                $buffer .= "\n\n/* FILE: {$path} */\n".@file_get_contents($path);
             }
         }
 
@@ -104,6 +99,7 @@ class PurgeService
     {
         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
         $allowed = ['twig', 'html', 'htm', 'php', 'phtml', 'js', 'ts', 'vue', 'jsx', 'tsx', 'md'];
+
         return in_array($ext, $allowed, true);
     }
 
@@ -117,7 +113,7 @@ class PurgeService
     {
         $selectors = [];
 
-        $clean = (string)$content;
+        $clean = (string) $content;
         $clean = preg_replace('/\{#.*?#\}/s', '', $clean) ?? $clean;
 
         // Harvest from Twig blocks
@@ -125,9 +121,9 @@ class PurgeService
             foreach ($twigBlocks[0] as $block) {
                 if (preg_match_all('/(["\'])\s*([^"\'\s][^"\']*)\s*\1/s', $block, $strs)) {
                     foreach ($strs[2] as $literal) {
-                        $literal = trim((string)$literal);
-                        if ($literal !== '' && $this->isValidCssIdent($literal)) {
-                            $selectors[] = '.' . $literal;
+                        $literal = trim((string) $literal);
+                        if ('' !== $literal && $this->isValidCssIdent($literal)) {
+                            $selectors[] = '.'.$literal;
                         }
                     }
                 }
@@ -140,10 +136,10 @@ class PurgeService
         // class="foo bar" and class='foo bar'
         if (preg_match_all('/class\s*=\s*(["\'])(.*?)\1/si', $clean, $m)) {
             foreach ($m[2] as $classList) {
-                foreach (preg_split('/\s+/', trim((string)$classList)) as $cls) {
+                foreach (preg_split('/\s+/', trim((string) $classList)) as $cls) {
                     $cls = trim($cls);
-                    if ($cls !== '' && $this->isValidCssIdent($cls)) {
-                        $selectors[] = '.' . $cls;
+                    if ('' !== $cls && $this->isValidCssIdent($cls)) {
+                        $selectors[] = '.'.$cls;
                     }
                 }
             }
@@ -152,10 +148,10 @@ class PurgeService
         // className="foo" (React/JSX)
         if (preg_match_all('/className\s*=\s*(["\'])(.*?)\1/si', $clean, $m2)) {
             foreach ($m2[2] as $classList) {
-                foreach (preg_split('/\s+/', trim((string)$classList)) as $cls) {
+                foreach (preg_split('/\s+/', trim((string) $classList)) as $cls) {
                     $cls = trim($cls);
-                    if ($cls !== '' && $this->isValidCssIdent($cls)) {
-                        $selectors[] = '.' . $cls;
+                    if ('' !== $cls && $this->isValidCssIdent($cls)) {
+                        $selectors[] = '.'.$cls;
                     }
                 }
             }
@@ -164,9 +160,9 @@ class PurgeService
         // id="foo" and id='foo'
         if (preg_match_all('/id\s*=\s*(["\'])(.*?)\1/si', $clean, $m3)) {
             foreach ($m3[2] as $idVal) {
-                $idVal = trim((string)$idVal);
-                if ($idVal !== '' && $this->isValidCssIdent($idVal)) {
-                    $selectors[] = '#' . $idVal;
+                $idVal = trim((string) $idVal);
+                if ('' !== $idVal && $this->isValidCssIdent($idVal)) {
+                    $selectors[] = '#'.$idVal;
                 }
             }
         }
@@ -174,7 +170,7 @@ class PurgeService
         // data-bs-theme=value => attribute selector
         if (preg_match_all('/data-bs-theme\s*=\s*(["\']?)([a-zA-Z0-9_-]+)\1/si', $clean, $m4)) {
             foreach ($m4[2] as $theme) {
-                $selectors[] = '[data-bs-theme=' . $theme . ']';
+                $selectors[] = '[data-bs-theme='.$theme.']';
             }
         }
 
@@ -188,10 +184,10 @@ class PurgeService
         // JS: element.classList.add('foo','bar')
         if (preg_match_all('/classList\.(?:add|toggle)\s*\(([^\)]*)\)/si', $clean, $m6)) {
             foreach ($m6[1] as $args) {
-                if (preg_match_all('/["\']([a-zA-Z0-9_-]+)["\']/', (string)$args, $mArgs)) {
+                if (preg_match_all('/["\']([a-zA-Z0-9_-]+)["\']/', (string) $args, $mArgs)) {
                     foreach ($mArgs[1] as $cls) {
                         if ($this->isValidCssIdent($cls)) {
-                            $selectors[] = '.' . $cls;
+                            $selectors[] = '.'.$cls;
                         }
                     }
                 }
@@ -207,28 +203,18 @@ class PurgeService
         $out = [];
         foreach ($selectors as $sel) {
             $sel = trim((string) $sel);
-            if ($sel === '') {
+            if ('' === $sel) {
                 continue;
             }
             $type = $sel[0];
             $valid = false;
-            switch ($type) {
-                case '.':
-                    $valid = (bool)preg_match('/^\.[A-Za-z_][A-Za-z0-9_-]*$/', $sel);
-                    break;
-                case '#':
-                    $valid = (bool)preg_match('/^#[A-Za-z_][A-Za-z0-9_-]*$/', $sel);
-                    break;
-                case '[':
-                    $valid = (bool)preg_match('/^\[[A-Za-z0-9_-]+=[A-Za-z0-9_-]+\]$/', $sel);
-                    break;
-                case ':':
-                    $valid = ($sel === ':root');
-                    break;
-                default:
-                    $valid = (bool)preg_match('/^[a-z][a-z0-9-]*$/', $sel);
-                    break;
-            }
+            $valid = match ($type) {
+                '.' => (bool) preg_match('/^\.[A-Za-z_][A-Za-z0-9_-]*$/', $sel),
+                '#' => (bool) preg_match('/^#[A-Za-z_][A-Za-z0-9_-]*$/', $sel),
+                '[' => (bool) preg_match('/^\[[A-Za-z0-9_-]+=[A-Za-z0-9_-]+\]$/', $sel),
+                ':' => ':root' === $sel,
+                default => (bool) preg_match('/^[a-z][a-z0-9-]*$/', $sel),
+            };
 
             if (!$valid) {
                 continue;
@@ -243,6 +229,6 @@ class PurgeService
 
     private function isValidCssIdent(string $token): bool
     {
-        return (bool)preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $token);
+        return (bool) preg_match('/^[A-Za-z_][A-Za-z0-9_-]*$/', $token);
     }
 }

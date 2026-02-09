@@ -10,9 +10,9 @@ return static function (ContainerConfigurator $config): void {
             ->autowire()
             ->autoconfigure();
 
-    $services->load('JBSNewMedia\\BootstrapBundle\\Command\\', __DIR__ . '/../../Command')
+    $services->load('JBSNewMedia\\BootstrapBundle\\Command\\', __DIR__.'/../../Command')
         ->private();
 
-    $services->load('JBSNewMedia\\BootstrapBundle\\Service\\', __DIR__ . '/../../Service')
+    $services->load('JBSNewMedia\\BootstrapBundle\\Service\\', __DIR__.'/../../Service')
         ->private();
 };

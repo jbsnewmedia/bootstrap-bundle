@@ -17,13 +17,14 @@ use Symfony\Component\HttpKernel\KernelInterface;
 )]
 class InitCommand extends Command
 {
-    private string $projectDir;
+    private readonly string $projectDir;
 
     public function __construct(KernelInterface $kernel)
     {
         parent::__construct();
         $this->projectDir = $kernel->getProjectDir();
     }
+
     protected function configure(): void
     {
         $this
@@ -36,10 +37,10 @@ class InitCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $scssDir = $this->projectDir . '/assets/scss';
+        $scssDir = $this->projectDir.'/assets/scss';
         $files = [
-            $scssDir . '/bootstrap5-custom.scss' => self::getLightContent(),
-            $scssDir . '/bootstrap5-custom-dark.scss' => self::getDarkContent(),
+            $scssDir.'/bootstrap5-custom.scss' => self::getLightContent(),
+            $scssDir.'/bootstrap5-custom-dark.scss' => self::getDarkContent(),
         ];
 
         $force = (bool) $input->getOption('force');
@@ -47,10 +48,11 @@ class InitCommand extends Command
 
         if (!is_dir($scssDir)) {
             if ($dryRun) {
-                $output->writeln("[dry-run] Would create directory: assets/scss");
+                $output->writeln('[dry-run] Would create directory: assets/scss');
             } else {
                 if (!mkdir($scssDir, 0777, true) && !is_dir($scssDir)) {
                     $output->writeln('<error>Failed to create directory: assets/scss</error>');
+
                     return Command::FAILURE;
                 }
                 $output->writeln('<info>Created directory:</info> assets/scss');
@@ -62,10 +64,10 @@ class InitCommand extends Command
         $overwritten = 0;
 
         foreach ($files as $path => $content) {
-            $rel = 'assets/scss/' . basename($path);
+            $rel = 'assets/scss/'.basename($path);
             if (file_exists($path) && !$force) {
                 $output->writeln("<comment>Skip existing:</comment> {$rel} (use --force to overwrite)");
-                $skipped++;
+                ++$skipped;
                 continue;
             }
 
@@ -78,20 +80,22 @@ class InitCommand extends Command
             $result = @file_put_contents($path, $content);
             if (false === $result) {
                 $output->writeln("<error>Failed to write file:</error> {$rel}");
+
                 return Command::FAILURE;
             }
 
             if ($force && file_exists($path)) {
-                $overwritten++;
+                ++$overwritten;
                 $output->writeln("<info>Overwrote:</info> {$rel}");
             } else {
-                $created++;
+                ++$created;
                 $output->writeln("<info>Created:</info> {$rel}");
             }
         }
 
         if ($dryRun) {
             $output->writeln('<info>Dry-run complete. No files were written.</info>');
+
             return Command::SUCCESS;
         }
 

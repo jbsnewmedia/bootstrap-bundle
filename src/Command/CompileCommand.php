@@ -19,13 +19,14 @@ use Symfony\Component\HttpKernel\KernelInterface;
 )]
 class CompileCommand extends Command
 {
-    private string $projectDir;
+    private readonly string $projectDir;
 
     public function __construct(KernelInterface $kernel)
     {
         parent::__construct();
         $this->projectDir = $kernel->getProjectDir();
     }
+
     protected function configure(): void
     {
         $this
@@ -37,42 +38,45 @@ class CompileCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!class_exists(\ScssPhp\ScssPhp\Compiler::class)) {
-            $bundleVendorAutoload = __DIR__ . '/../../vendor/autoload.php';
+        if (!class_exists(Compiler::class)) {
+            $bundleVendorAutoload = __DIR__.'/../../vendor/autoload.php';
             if (is_file($bundleVendorAutoload)) {
                 /** @noinspection PhpIncludeInspection */
                 @require_once $bundleVendorAutoload;
             }
         }
-        if (!class_exists(\ScssPhp\ScssPhp\Compiler::class)) {
+        if (!class_exists(Compiler::class)) {
             $output->writeln('<error>Required class ScssPhp\\ScssPhp\\Compiler not found.</error>');
             $output->writeln('<comment>If you are loading BootstrapBundle from source, run "composer install" inside jbsnewmedia/bootstrap-bundle so its vendor/autoload.php exists.</comment>');
             $output->writeln('<comment>Alternatively, add "scssphp/scssphp" to your application composer.json.</comment>');
+
             return Command::FAILURE;
         }
 
         $inRel = (string) $input->getArgument('input');
         $outMinRel = (string) $input->getArgument('output');
         $outNormalRel = (string) $input->getOption('output-normal');
-        $in = $this->projectDir . DIRECTORY_SEPARATOR . $inRel;
-        $outMin = $this->projectDir . DIRECTORY_SEPARATOR . $outMinRel;
-        $outNormal = $this->projectDir . DIRECTORY_SEPARATOR . $outNormalRel;
+        $in = $this->projectDir.DIRECTORY_SEPARATOR.$inRel;
+        $outMin = $this->projectDir.DIRECTORY_SEPARATOR.$outMinRel;
+        $outNormal = $this->projectDir.DIRECTORY_SEPARATOR.$outNormalRel;
 
         if (!file_exists($in)) {
             $output->writeln("<error>Input file not found: {$inRel}</error>");
-            if ($inRel === 'vendor/twbs/bootstrap/scss/bootstrap.scss') {
+            if ('vendor/twbs/bootstrap/scss/bootstrap.scss' === $inRel) {
                 $output->writeln('<comment>Hint: Make sure the package "twbs/bootstrap" is installed (composer require twbs/bootstrap) and the path is correct.</comment>');
             }
-            if ($inRel === 'assets/scss/bootstrap5-custom.scss') {
+            if ('assets/scss/bootstrap5-custom.scss' === $inRel) {
                 $output->writeln('<comment>Hint: Create the file assets/scss/bootstrap5-custom.scss (override variables, then add "@import \"bootstrap\";") or explicitly use the vendor entry: vendor/twbs/bootstrap/scss/bootstrap.scss</comment>');
             }
+
             return Command::FAILURE;
         }
 
         foreach ([dirname($outNormal), dirname($outMin)] as $outDir) {
             if (!is_dir($outDir)) {
                 if (!mkdir($outDir, 0777, true) && !is_dir($outDir)) {
-                    $output->writeln('<error>Failed to create output directory: ' . $outDir . '</error>');
+                    $output->writeln('<error>Failed to create output directory: '.$outDir.'</error>');
+
                     return Command::FAILURE;
                 }
             }
@@ -80,10 +84,10 @@ class CompileCommand extends Command
 
         $compiler = new Compiler();
         $compiler->setImportPaths([
-            $this->projectDir . '/vendor/twbs/bootstrap/scss',
-            $this->projectDir . '/vendor',
-            $this->projectDir . '/assets/scss',
-            $this->projectDir . '/assets',
+            $this->projectDir.'/vendor/twbs/bootstrap/scss',
+            $this->projectDir.'/vendor',
+            $this->projectDir.'/assets/scss',
+            $this->projectDir.'/assets',
         ]);
 
         $sourceMap = (bool) $input->getOption('source-map');
@@ -92,8 +96,9 @@ class CompileCommand extends Command
         }
 
         $scss = file_get_contents($in);
-        if ($scss === false) {
+        if (false === $scss) {
             $output->writeln('<error>Failed to read input file.</error>');
+
             return Command::FAILURE;
         }
 
@@ -101,8 +106,8 @@ class CompileCommand extends Command
             $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::EXPANDED);
             if ($sourceMap) {
                 $compiler->setSourceMapOptions([
-                    'sourceMapWriteTo' => $outNormal . '.map',
-                    'sourceMapURL' => basename($outNormal) . '.map',
+                    'sourceMapWriteTo' => $outNormal.'.map',
+                    'sourceMapURL' => basename($outNormal).'.map',
                     'sourceMapFilename' => basename($outNormal),
                     'sourceMapBasepath' => $this->projectDir,
                     'sourceRoot' => '/',
@@ -111,17 +116,18 @@ class CompileCommand extends Command
             $resultReadable = $compiler->compileString($scss, $in);
             $cssReadable = $resultReadable->getCss();
             file_put_contents($outNormal, $cssReadable);
-            $output->writeln('<info>Compiled (readable) ' . $inRel . ' -> ' . $outNormalRel . '</info>');
+            $output->writeln('<info>Compiled (readable) '.$inRel.' -> '.$outNormalRel.'</info>');
             if ($sourceMap) {
                 $mapContent = $resultReadable->getSourceMap();
-                if (is_string($mapContent) && $mapContent !== '') {
-                    $mapPath = $outNormal . '.map';
+                if (is_string($mapContent) && '' !== $mapContent) {
+                    $mapPath = $outNormal.'.map';
                     file_put_contents($mapPath, $mapContent);
-                    $output->writeln('<info>Source map written: ' . $this->makePathRelative($mapPath) . '</info>');
+                    $output->writeln('<info>Source map written: '.$this->makePathRelative($mapPath).'</info>');
                 }
             }
         } catch (\Throwable $e) {
-            $output->writeln('<error>SCSS compilation (readable) failed: ' . $e->getMessage() . '</error>');
+            $output->writeln('<error>SCSS compilation (readable) failed: '.$e->getMessage().'</error>');
+
             return Command::FAILURE;
         }
 
@@ -129,8 +135,8 @@ class CompileCommand extends Command
             $compiler->setOutputStyle(\ScssPhp\ScssPhp\OutputStyle::COMPRESSED);
             if ($sourceMap) {
                 $compiler->setSourceMapOptions([
-                    'sourceMapWriteTo' => $outMin . '.map',
-                    'sourceMapURL' => basename($outMin) . '.map',
+                    'sourceMapWriteTo' => $outMin.'.map',
+                    'sourceMapURL' => basename($outMin).'.map',
                     'sourceMapFilename' => basename($outMin),
                     'sourceMapBasepath' => $this->projectDir,
                     'sourceRoot' => '/',
@@ -139,17 +145,18 @@ class CompileCommand extends Command
             $resultMin = $compiler->compileString($scss, $in);
             $cssMin = $resultMin->getCss();
             file_put_contents($outMin, $cssMin);
-            $output->writeln('<info>Compiled (minified) ' . $inRel . ' -> ' . $outMinRel . '</info>');
+            $output->writeln('<info>Compiled (minified) '.$inRel.' -> '.$outMinRel.'</info>');
             if ($sourceMap) {
                 $mapContent = $resultMin->getSourceMap();
-                if (is_string($mapContent) && $mapContent !== '') {
-                    $mapPath = $outMin . '.map';
+                if (is_string($mapContent) && '' !== $mapContent) {
+                    $mapPath = $outMin.'.map';
                     file_put_contents($mapPath, $mapContent);
-                    $output->writeln('<info>Source map written: ' . $this->makePathRelative($mapPath) . '</info>');
+                    $output->writeln('<info>Source map written: '.$this->makePathRelative($mapPath).'</info>');
                 }
             }
         } catch (\Throwable $e) {
-            $output->writeln('<error>SCSS compilation (minified) failed: ' . $e->getMessage() . '</error>');
+            $output->writeln('<error>SCSS compilation (minified) failed: '.$e->getMessage().'</error>');
+
             return Command::FAILURE;
         }
 
@@ -158,10 +165,11 @@ class CompileCommand extends Command
 
     private function makePathRelative(string $absPath): string
     {
-        $prefix = rtrim($this->projectDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+        $prefix = rtrim($this->projectDir, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR;
         if (str_starts_with($absPath, $prefix)) {
             return substr($absPath, strlen($prefix));
         }
+
         return $absPath;
     }
 }
