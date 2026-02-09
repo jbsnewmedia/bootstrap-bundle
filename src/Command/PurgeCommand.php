@@ -43,49 +43,63 @@ class PurgeCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $cssInput = (string) $input->getOption('input');
-        $cssOutput = (string) $input->getOption('output');
-        $templatesDirs = (array) $input->getOption('templates-dir');
-        $includeDirs = (array) $input->getOption('include-dir');
-        $includeFiles = (array) $input->getOption('include-file');
+        $inputRaw = $input->getOption('input');
+        $cssInput = is_scalar($inputRaw) ? (string) $inputRaw : '';
+        $outputRaw = $input->getOption('output');
+        $cssOutput = is_scalar($outputRaw) ? (string) $outputRaw : '';
+        /** @var string[] $extraSelectors */
         $extraSelectors = (array) $input->getOption('selector');
         $readable = (bool) $input->getOption('readable');
         $dryRun = (bool) $input->getOption('dry-run');
 
         $pathsToScan = [];
-        foreach ([...$templatesDirs, ...$includeDirs] as $dir) {
-            if (is_string($dir) && '' !== $dir && is_dir($dir)) {
+        /** @var string[] $templatesDirs */
+        $templatesDirs = (array) $input->getOption('templates-dir');
+        /** @var string[] $includeDirs */
+        $includeDirs = (array) $input->getOption('include-dir');
+        /** @var string[] $includeFiles */
+        $includeFiles = (array) $input->getOption('include-file');
+
+        foreach ($templatesDirs as $dir) {
+            if ('' !== $dir && is_dir($dir)) {
+                $pathsToScan[] = $dir;
+            }
+        }
+        foreach ($includeDirs as $dir) {
+            if ('' !== $dir && is_dir($dir)) {
                 $pathsToScan[] = $dir;
             }
         }
         foreach ($includeFiles as $file) {
-            if (is_string($file) && '' !== $file && is_file($file)) {
+            if ('' !== $file && is_file($file)) {
                 $pathsToScan[] = $file;
             }
         }
 
-        [$keptSelectors, $purgedCss, $stats] = $this->purgeService->purge(
+        /** @var array{0: string[], 1: string, 2: array{found: int, normalized: int, scanned_files: string[]}} $purgeResult */
+        $purgeResult = $this->purgeService->purge(
             cssPath: $cssInput,
             pathsToScan: $pathsToScan,
             extraSelectors: $extraSelectors,
             readable: $readable,
         );
+        [$keptSelectors, $purgedCss, $stats] = $purgeResult;
 
-        $output->writeln(sprintf('Found %d selectors in sources; keeping %d after normalization.', $stats['found'] ?? 0, count($keptSelectors)));
+        $output->writeln(sprintf('Found %d selectors in sources; keeping %d after normalization.', $stats['found'], count($keptSelectors)));
         $output->writeln(sprintf('Input CSS: %s (%s)', $cssInput, is_file($cssInput) ? (string) filesize($cssInput).' bytes' : 'missing'));
         $output->writeln(sprintf('Output CSS: %s%s', $cssOutput, $dryRun ? ' (dry-run, not written)' : ''));
 
         if (!empty($keptSelectors)) {
             $output->writeln('Selectors found (normalized):');
             foreach ($keptSelectors as $sel) {
-                $output->writeln('  - '.$sel);
+                $output->writeln('  - '.(string) $sel);
             }
 
-            $tags = array_values(array_unique(array_filter($keptSelectors, static fn(string $s): bool => (bool) preg_match('/^[a-z][a-z0-9-]*$/', $s))));
+            $tags = array_values(array_unique(array_filter($keptSelectors, static fn (string $s): bool => (bool) preg_match('/^[a-z][a-z0-9-]*$/', $s))));
             if (!empty($tags)) {
                 $output->writeln('HTML tags found:');
                 foreach ($tags as $tag) {
-                    $output->writeln('  - '.$tag);
+                    $output->writeln('  - '.(string) $tag);
                 }
             } else {
                 $output->writeln('HTML tags found: none');
@@ -95,10 +109,19 @@ class PurgeCommand extends Command
         }
 
         if (!$dryRun) {
-            if (!is_dir(dirname($cssOutput))) {
-                @mkdir(dirname($cssOutput), 0777, true);
+            $outDir = dirname($cssOutput);
+            if (!is_dir($outDir)) {
+                if (!@mkdir($outDir, 0777, true) && !is_dir($outDir)) {
+                    $output->writeln('<error>Failed to create output directory: '.$outDir.'</error>');
+
+                    return Command::FAILURE;
+                }
             }
-            file_put_contents($cssOutput, $purgedCss);
+            if (false === @file_put_contents($cssOutput, $purgedCss)) {
+                $output->writeln('<error>Failed to write output file: '.$cssOutput.'</error>');
+
+                return Command::FAILURE;
+            }
         }
 
         return Command::SUCCESS;
