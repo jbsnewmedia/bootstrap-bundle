@@ -21,7 +21,7 @@ class CompileCommand extends Command
 {
     private readonly string $projectDir;
 
-    public function __construct(KernelInterface $kernel)
+    public function __construct(KernelInterface $kernel, private readonly ?\JBSNewMedia\BootstrapBundle\Service\ScssCompilerFactory $compilerFactory = null)
     {
         parent::__construct();
         $this->projectDir = $kernel->getProjectDir();
@@ -38,14 +38,8 @@ class CompileCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        if (!class_exists(Compiler::class)) {
-            $bundleVendorAutoload = __DIR__.'/../../vendor/autoload.php';
-            if (is_file($bundleVendorAutoload)) {
-                /** @noinspection PhpIncludeInspection */
-                @require_once $bundleVendorAutoload;
-            }
-        }
-        if (!class_exists(Compiler::class)) {
+        $factory = $this->compilerFactory ?? new \JBSNewMedia\BootstrapBundle\Service\ScssCompilerFactory();
+        if (!$factory->isAvailable()) {
             $output->writeln('<error>Required class ScssPhp\\ScssPhp\\Compiler not found.</error>');
             $output->writeln('<comment>If you are loading BootstrapBundle from source, run "composer install" inside jbsnewmedia/bootstrap-bundle so its vendor/autoload.php exists.</comment>');
             $output->writeln('<comment>Alternatively, add "scssphp/scssphp" to your application composer.json.</comment>');
@@ -85,7 +79,7 @@ class CompileCommand extends Command
             }
         }
 
-        $compiler = new Compiler();
+        $compiler = $factory->create();
         $compiler->setImportPaths([
             $this->projectDir.'/vendor/twbs/bootstrap/scss',
             $this->projectDir.'/vendor',
