@@ -53,9 +53,12 @@ class CompileCommand extends Command
             return Command::FAILURE;
         }
 
-        $inRel = (string) $input->getArgument('input');
-        $outMinRel = (string) $input->getArgument('output');
-        $outNormalRel = (string) $input->getOption('output-normal');
+        $inRaw = $input->getArgument('input');
+        $inRel = is_scalar($inRaw) ? (string) $inRaw : '';
+        $outRaw = $input->getArgument('output');
+        $outMinRel = is_scalar($outRaw) ? (string) $outRaw : '';
+        $outNormalRaw = $input->getOption('output-normal');
+        $outNormalRel = is_scalar($outNormalRaw) ? (string) $outNormalRaw : '';
         $in = $this->projectDir.DIRECTORY_SEPARATOR.$inRel;
         $outMin = $this->projectDir.DIRECTORY_SEPARATOR.$outMinRel;
         $outNormal = $this->projectDir.DIRECTORY_SEPARATOR.$outNormalRel;
@@ -74,7 +77,7 @@ class CompileCommand extends Command
 
         foreach ([dirname($outNormal), dirname($outMin)] as $outDir) {
             if (!is_dir($outDir)) {
-                if (!mkdir($outDir, 0777, true) && !is_dir($outDir)) {
+                if (!@mkdir($outDir, 0777, true) && !is_dir($outDir)) {
                     $output->writeln('<error>Failed to create output directory: '.$outDir.'</error>');
 
                     return Command::FAILURE;
@@ -95,7 +98,7 @@ class CompileCommand extends Command
             $compiler->setSourceMap(Compiler::SOURCE_MAP_FILE);
         }
 
-        $scss = file_get_contents($in);
+        $scss = @file_get_contents($in);
         if (false === $scss) {
             $output->writeln('<error>Failed to read input file.</error>');
 
