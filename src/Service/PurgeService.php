@@ -16,17 +16,19 @@ class PurgeService
      * @param string[] $extraSelectors Additional selectors to keep
      * @param bool     $readable       If true, output will be formatted (not minified)
      *
-     * @return array{0: array<int,string>, 1: string, 2: array<string, mixed>} [selectorsKept, cssOutput, stats]
+     * @return array{0: string[], 1: string, 2: array{found: int, normalized: int, scanned_files: string[]}} [selectorsKept, cssOutput, stats]
      */
     public function purge(string $cssPath, array $pathsToScan = [], array $extraSelectors = [], bool $readable = false): array
     {
         [$content, $scannedFiles] = $this->collectContents($pathsToScan);
         $foundSelectors = $this->extractSelectors($content);
 
+        /** @var mixed $sel */
         foreach ($extraSelectors as $sel) {
-            $sel = trim((string) $sel);
-            if ('' !== $sel) {
-                $foundSelectors[] = $sel;
+            $selStr = is_scalar($sel) ? (string) $sel : '';
+            $selStr = trim($selStr);
+            if ('' !== $selStr) {
+                $foundSelectors[] = $selStr;
             }
         }
 
@@ -136,10 +138,13 @@ class PurgeService
         // class="foo bar" and class='foo bar'
         if (preg_match_all('/class\s*=\s*(["\'])(.*?)\1/si', $clean, $m)) {
             foreach ($m[2] as $classList) {
-                foreach (preg_split('/\s+/', trim((string) $classList)) as $cls) {
-                    $cls = trim($cls);
-                    if ('' !== $cls && $this->isValidCssIdent($cls)) {
-                        $selectors[] = '.'.$cls;
+                $lines = preg_split('/\s+/', trim((string) $classList));
+                if (is_array($lines)) {
+                    foreach ($lines as $cls) {
+                        $cls = trim($cls);
+                        if ('' !== $cls && $this->isValidCssIdent($cls)) {
+                            $selectors[] = '.'.$cls;
+                        }
                     }
                 }
             }
@@ -148,10 +153,13 @@ class PurgeService
         // className="foo" (React/JSX)
         if (preg_match_all('/className\s*=\s*(["\'])(.*?)\1/si', $clean, $m2)) {
             foreach ($m2[2] as $classList) {
-                foreach (preg_split('/\s+/', trim((string) $classList)) as $cls) {
-                    $cls = trim($cls);
-                    if ('' !== $cls && $this->isValidCssIdent($cls)) {
-                        $selectors[] = '.'.$cls;
+                $lines = preg_split('/\s+/', trim((string) $classList));
+                if (is_array($lines)) {
+                    foreach ($lines as $cls) {
+                        $cls = trim($cls);
+                        if ('' !== $cls && $this->isValidCssIdent($cls)) {
+                            $selectors[] = '.'.$cls;
+                        }
                     }
                 }
             }
@@ -197,7 +205,9 @@ class PurgeService
         return $selectors;
     }
 
-    /** @param string[] $selectors */
+    /** @param string[] $selectors
+     * @return string[]
+     */
     private function normalizeSelectors(array $selectors): array
     {
         $out = [];
