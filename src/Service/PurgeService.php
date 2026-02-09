@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace JBSNewMedia\BootstrapBundle\Service;
 
-use JBSNewMedia\CssPurger\Vendors\Bootstrap as BootstrapPurger;
-
 class PurgeService
 {
+    public function __construct(private ?BootstrapPurgerFactory $purgerFactory = null)
+    {
+    }
+
     /**
      * Purge a CSS file using selectors found in given paths and extra selectors provided.
      *
@@ -35,18 +37,8 @@ class PurgeService
         $normalized = $this->normalizeSelectors($foundSelectors);
         $normalized = array_values(array_unique($normalized));
 
-        if (!class_exists(BootstrapPurger::class)) {
-            $bundleVendorAutoload = __DIR__.'/../../vendor/autoload.php';
-            if (is_file($bundleVendorAutoload)) {
-                /** @noinspection PhpIncludeInspection */
-                @require_once $bundleVendorAutoload;
-            }
-        }
-        if (!class_exists(BootstrapPurger::class)) {
-            throw new \RuntimeException('Required class JBSNewMedia\\CssPurger\\Vendors\\Bootstrap not found. Please ensure the package "jbsnewmedia/css-purger" is installed. If you load the BootstrapBundle from source, either: 1) require jbsnewmedia/css-purger in your application, or 2) run "composer install" inside the bundle so its vendor/autoload.php exists.');
-        }
-
-        $purger = new BootstrapPurger($cssPath);
+        $factory = $this->purgerFactory ??= new BootstrapPurgerFactory();
+        $purger = $factory->create($cssPath);
         $purger->loadContent();
         $purger->prepareContent();
         $purger->runContent();
