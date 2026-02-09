@@ -50,7 +50,7 @@ class InitCommand extends Command
             if ($dryRun) {
                 $output->writeln('[dry-run] Would create directory: assets/scss');
             } else {
-                if (!mkdir($scssDir, 0777, true) && !is_dir($scssDir)) {
+                if (!@mkdir($scssDir, 0777, true) && !is_dir($scssDir)) {
                     $output->writeln('<error>Failed to create directory: assets/scss</error>');
 
                     return Command::FAILURE;
