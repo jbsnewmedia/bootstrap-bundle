@@ -1,5 +1,16 @@
 # Bootstrap Bundle
 
+[![Packagist Version](https://img.shields.io/packagist/v/jbsnewmedia/bootstrap-bundle)](https://packagist.org/packages/jbsnewmedia/bootstrap-bundle)
+[![Packagist Downloads](https://img.shields.io/packagist/dt/jbsnewmedia/bootstrap-bundle)](https://packagist.org/packages/jbsnewmedia/bootstrap-bundle)
+[![PHP Version Require](https://img.shields.io/packagist/php-v/jbsnewmedia/bootstrap-bundle)](https://packagist.org/packages/jbsnewmedia/bootstrap-bundle)
+[![Symfony Version](https://img.shields.io/badge/symfony-%5E7.4-673ab7?logo=symfony)](https://symfony.com)
+[![License](https://img.shields.io/packagist/l/jbsnewmedia/bootstrap-bundle)](https://packagist.org/packages/jbsnewmedia/bootstrap-bundle)
+[![Tests](https://github.com/jbsnewmedia/bootstrap-bundle/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/jbsnewmedia/bootstrap-bundle/actions/workflows/tests.yml)
+[![PHP CS Fixer](https://img.shields.io/badge/php--cs--fixer-checked-brightgreen)](https://github.com/jbsnewmedia/bootstrap-bundle/actions/workflows/tests.yml)
+[![PHPStan](https://img.shields.io/badge/phpstan-analysed-brightgreen)](https://github.com/jbsnewmedia/bootstrap-bundle/actions/workflows/tests.yml)
+[![Rector](https://img.shields.io/badge/rector-checked-brightgreen)](https://github.com/jbsnewmedia/bootstrap-bundle/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/jbsnewmedia/bootstrap-bundle/branch/main/graph/badge.svg)](https://codecov.io/gh/jbsnewmedia/bootstrap-bundle)
+
 A lightweight Symfony bundle that helps you scaffold and compile Bootstrap SCSS with [scssphp](https://github.com/scssphp/scssphp). It ships three console commands:
 
 - `bootstrap:init` — scaffolds SCSS entry files under `assets/scss/`.
@@ -251,7 +262,7 @@ $primary: #0d6efd;
 ## ℹ️ Git information
 
 - Latest tag: `1.0.2`
-- Last commit: `b66d748` — 2025-12-08
+- Last commit: `ffb3318` — 2026-02-09
 
 ---
 
